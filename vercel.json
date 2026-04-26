@@ -1,15 +1,22 @@
 {
   "version": 2,
   "name": "india-geo-api",
-  "builds": [
-    {
-      "src": "api/src/app.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
+  {
+  "version": 2,
+  "functions": {
+    "src/app.js": {
+      "runtime": "@vercel/node",
+      "memory": 1024,
+      "maxDuration": 10
     }
-  ],
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/app.js"
+    }
+  ]
+},
   "routes": [
     {
       "src": "/health",
