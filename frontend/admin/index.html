@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Geo — Admin Console</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --surface2:  #21262d;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --muted:     #7d8590;
+    --accent:    #f97316;
+    --accent-d:  #ea580c;
+    --green:     #3fb950;
+    --red:       #f85149;
+    --blue:      #58a6ff;
+    --yellow:    #d29922;
+    --radius:    10px;
+    --shadow:    0 4px 24px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+  a{color:inherit;text-decoration:none}
+
+  /* ── Sidebar ─────────────────────────────────────────────────────────── */
+  .sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+  .logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent-d));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .logo-text{font-size:14px;font-weight:700;letter-spacing:.3px}
+  .logo-badge{font-size:10px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:4px;font-weight:600;margin-left:auto}
+  nav{flex:1;padding:12px 8px;overflow-y:auto}
+  .nav-section{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:8px 12px 4px}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .15s;color:var(--muted)}
+  .nav-item:hover,.nav-item.active{background:var(--surface2);color:var(--text)}
+  .nav-item.active{color:var(--accent)}
+  .nav-icon{width:18px;text-align:center}
+  .sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)}
+
+  /* ── Main ────────────────────────────────────────────────────────────── */
+  .main{flex:1;margin-left:240px;display:flex;flex-direction:column;min-height:100vh}
+  .topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;position:sticky;top:0;z-index:99}
+  .topbar-title{font-size:15px;font-weight:600;flex:1}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+  .status-label{font-size:12px;color:var(--muted)}
+  .btn{padding:7px 14px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:var(--accent-d)}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+  .btn-ghost:hover{color:var(--text);border-color:var(--text)}
+  .content{padding:24px;flex:1}
+
+  /* ── Stat Cards ──────────────────────────────────────────────────────── */
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+  .stat-value{font-size:28px;font-weight:700;line-height:1;margin-bottom:6px}
+  .stat-sub{font-size:12px;color:var(--muted)}
+  .stat-sub .up{color:var(--green)}
+  .stat-sub .dn{color:var(--red)}
+  .stat-accent{border-top:3px solid var(--accent)}
+  .stat-green{border-top:3px solid var(--green)}
+  .stat-blue{border-top:3px solid var(--blue)}
+  .stat-yellow{border-top:3px solid var(--yellow)}
+
+  /* ── Grid / Cards ────────────────────────────────────────────────────── */
+  .row{display:grid;gap:16px;margin-bottom:24px}
+  .row-2{grid-template-columns:2fr 1fr}
+  .row-3{grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .card-title{font-size:13px;font-weight:600}
+  .card-action{font-size:12px;color:var(--blue);cursor:pointer}
+
+  /* ── Table ───────────────────────────────────────────────────────────── */
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{padding:8px 12px;text-align:left;color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+  td{padding:10px 12px;border-bottom:1px solid var(--border)}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--surface2)}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+  .badge-green{background:#3fb95020;color:var(--green)}
+  .badge-yellow{background:#d2992220;color:var(--yellow)}
+  .badge-red{background:#f8514920;color:var(--red)}
+  .badge-blue{background:#58a6ff20;color:var(--blue)}
+  .badge-orange{background:#f9731620;color:var(--accent)}
+
+  /* ── Search / Filter ─────────────────────────────────────────────────── */
+  .filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .input{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:6px;font-size:13px;outline:none;transition:border-color .15s}
+  .input:focus{border-color:var(--accent)}
+  .input::placeholder{color:var(--muted)}
+  select.input option{background:var(--surface2)}
+
+  /* ── Coverage bar ────────────────────────────────────────────────────── */
+  .bar-wrap{background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;margin-top:4px}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-d));border-radius:4px;transition:width .4s}
+
+  /* ── Tabs ────────────────────────────────────────────────────────────── */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:20px}
+  .tab{padding:8px 16px;font-size:13px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+  /* ── Loader ─────────────────────────────────────────────────────────── */
+  .loading{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── Page sections ───────────────────────────────────────────────────── */
+  .page{display:none}.page.active{display:block}
+
+  /* ── Latency indicator ───────────────────────────────────────────────── */
+  .latency{font-size:11px;padding:2px 6px;border-radius:4px;font-weight:600}
+  .latency.fast{background:#3fb95015;color:var(--green)}
+  .latency.ok{background:#d2992215;color:var(--yellow)}
+  .latency.slow{background:#f8514915;color:var(--red)}
+
+  /* ── Toast ───────────────────────────────────────────────────────────── */
+  #toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);padding:12px 18px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">🗺️</div>
+    <span class="logo-text">India Geo</span>
+    <span class="logo-badge">ADMIN</span>
+  </div>
+  <nav>
+    <div class="nav-section">Platform</div>
+    <div class="nav-item active" onclick="showPage('overview')">
+      <span class="nav-icon">📊</span> Overview
+    </div>
+    <div class="nav-item" onclick="showPage('users')">
+      <span class="nav-icon">👥</span> Users
+    </div>
+    <div class="nav-item" onclick="showPage('apikeys')">
+      <span class="nav-icon">🔑</span> API Keys
+    </div>
+    <div class="nav-section">Data</div>
+    <div class="nav-item" onclick="showPage('coverage')">
+      <span class="nav-icon">🇮🇳</span> Geo Coverage
+    </div>
+    <div class="nav-item" onclick="showPage('explorer')">
+      <span class="nav-icon">🔍</span> Data Explorer
+    </div>
+    <div class="nav-section">Performance</div>
+    <div class="nav-item" onclick="showPage('analytics')">
+      <span class="nav-icon">📈</span> Analytics
+    </div>
+    <div class="nav-item" onclick="showPage('realtime')">
+      <span class="nav-icon">⚡</span> Realtime
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    v1.0.0 · India Geo SaaS<br>
+    <span id="live-time" style="color:var(--accent)"></span>
+  </div>
+</aside>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Platform Overview</div>
+    <div class="status-dot" id="health-dot"></div>
+    <span class="status-label" id="health-label">Checking...</span>
+    <button class="btn btn-ghost" onclick="refreshAll()" style="margin-left:8px">↻ Refresh</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ── Overview Page ───────────────────────────────────────────────── -->
+    <div class="page active" id="page-overview">
+      <div class="stat-grid">
+        <div class="stat-card stat-accent">
+          <div class="stat-label">Total Users</div>
+          <div class="stat-value" id="s-users">—</div>
+          <div class="stat-sub"><span class="up" id="s-users-24h">—</span> new today</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-label">Requests Today</div>
+          <div class="stat-value" id="s-req-today">—</div>
+          <div class="stat-sub"><span id="s-active-keys">—</span> active keys</div>
+        </div>
+        <div class="stat-card stat-blue">
+          <div class="stat-label">P95 Latency (1h)</div>
+          <div class="stat-value" id="s-p95">—</div>
+          <div class="stat-sub">Target: &lt;100ms</div>
+        </div>
+        <div class="stat-card stat-yellow">
+          <div class="stat-label">Cache Hit Rate</div>
+          <div class="stat-value" id="s-cache">—</div>
+          <div class="stat-sub">last 1 hour</div>
+        </div>
+      </div>
+
+      <div class="row row-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Request Volume — Last 30 days</span>
+            <span class="card-action" id="chart-loading">Loading…</span>
+          </div>
+          <canvas id="req-chart" height="90"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Plan Distribution</span></div>
+          <canvas id="plan-chart" height="160"></canvas>
+          <div id="plan-legend" style="margin-top:12px;font-size:12px;display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
+        </div>
+      </div>
+
+      <div class="row row-3">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Database</span></div>
+          <div style="font-size:13px;display:grid;gap:10px" id="geo-stats">
+            <div>Loading…</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">API Health</span></div>
+          <div id="latency-stats" style="font-size:13px;display:grid;gap:8px">Loading…</div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Revenue (MRR)</span></div>
+          <div id="revenue-stats" style="font-size:13px;display:grid;gap:8px">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Users Page ───────────────────────────────────────────────────── -->
+    <div class="page" id="page-users">
+      <div class="filters">
+        <input class="input" id="user-search" placeholder="Search email or company…" style="width:260px" oninput="filterUsers()">
+        <select class="input" id="user-plan-filter" onchange="filterUsers()">
+          <option value="">All Plans</option>
+          <option value="free">Free</option>
+          <option value="premium">Premium</option>
+          <option value="pro">Pro</option>
+          <option value="unlimited">Unlimited</option>
+        </select>
+        <span style="font-size:13px;color:var(--muted);align-self:center" id="user-count"></span>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th><th>Company</th><th>Plan</th><th>Keys</th>
+                <th>Requests Today</th><th>Joined</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px">Loading users…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Geo Coverage Page ────────────────────────────────────────────── -->
+    <div class="page" id="page-coverage">
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header"><span class="card-title">State-wise Geo Coverage (Census 2011 MDDS)</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>State</th><th>Code</th><th>Districts</th><th>Sub-Districts</th><th>Villages</th><th>Coverage</th></tr>
+            </thead>
+            <tbody id="coverage-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Data Explorer Page ───────────────────────────────────────────── -->
+    <div class="page" id="page-explorer">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title">Village Search Explorer</span></div>
+        <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <input class="input" id="ex-query" placeholder="Search village, district, state…" style="flex:1;min-width:200px" oninput="explorerSearch()">
+          <select class="input" id="ex-type">
+            <option value="village">Villages</option>
+            <option value="sub_district">Sub-Districts</option>
+            <option value="district">Districts</option>
+            <option value="all">All Types</option>
+          </select>
+          <input class="input" id="ex-apikey" placeholder="Your API key (igk_…)" style="width:240px">
+          <button class="btn btn-primary" onclick="explorerSearch()">Search</button>
+        </div>
+        <div id="explorer-results" style="font-size:13px;color:var(--muted)">
+          Enter a search query to explore the geo database.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Hierarchy Drill-Down</span></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <select class="input" id="dd-state" style="flex:1" onchange="loadDistricts()">
+            <option value="">— Select State —</option>
+          </select>
+          <select class="input" id="dd-district" style="flex:1" onchange="loadSubDistricts()">
+            <option value="">— Select District —</option>
+          </select>
+          <select class="input" id="dd-subdist" style="flex:1" onchange="loadVillages()">
+            <option value="">— Select Sub-District —</option>
+          </select>
+        </div>
+        <div id="dd-villages" style="margin-top:16px;font-size:13px;color:var(--muted)">
+          Select a sub-district to see its villages.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Analytics Page ──────────────────────────────────────────────── -->
+    <div class="page" id="page-analytics">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Top Endpoints (Last 7 days)</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Endpoint</th><th>Requests</th><th>Avg Latency</th><th>P95</th><th>Cache Hit %</th><th>Errors</th></tr></thead>
+            <tbody id="endpoints-tbody">
+              <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Realtime Page ────────────────────────────────────────────────── -->
+    <div class="page" id="page-realtime">
+      <div class="row row-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚡ Live Requests (5 min window)</span>
+            <span class="card-action" style="color:var(--green);font-size:11px" id="rt-last-update"></span>
+          </div>
+          <canvas id="rt-chart" height="100"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Current Metrics</span></div>
+          <div id="rt-metrics" style="font-size:13px;display:grid;gap:12px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Placeholder pages -->
+    <div class="page" id="page-apikeys">
+      <div class="card"><div style="padding:20px;color:var(--muted);font-size:13px">API Keys management — use the B2B Portal for key creation and management. Admin view coming soon.</div></div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────
+const API = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api/v1'
+  : '/api/v1';
+
+let adminToken = localStorage.getItem('admin_token') || '';
+let charts     = {};
+let rtInterval = null;
+
+// ── Utilities ─────────────────────────────────────────────────────────────
+function fmt(n) { return Number(n).toLocaleString('en-IN'); }
+function fmtMs(ms) { return ms == null ? '—' : ms + 'ms'; }
+function latClass(ms) { return ms < 50 ? 'fast' : ms < 100 ? 'ok' : 'slow'; }
+function relDate(d) {
+  const diff = Date.now() - new Date(d);
+  if (diff < 60000)    return Math.floor(diff/1000) + 's ago';
+  if (diff < 3600000)  return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return new Date(d).toLocaleDateString();
+}
+const planColors = { free:'var(--muted)', premium:'var(--blue)', pro:'var(--accent)', unlimited:'var(--green)' };
+const planBadge  = p => `<span class="badge badge-${p==='free'?'':p==='premium'?'blue':p==='pro'?'orange':'green'}">${p}</span>`;
+
+function toast(msg, ok=true) {
+  const el = document.getElementById('toast');
+  el.textContent = (ok ? '✓ ' : '✗ ') + msg;
+  el.style.borderColor = ok ? 'var(--green)' : 'var(--red)';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+async function apiFetch(path, opts={}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json', ...opts.headers }
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+// ── Page navigation ───────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(name)) n.classList.add('active');
+  });
+  const titles = { overview:'Platform Overview', users:'User Management', coverage:'Geo Coverage',
+                   explorer:'Data Explorer', analytics:'Analytics', realtime:'Realtime Monitor', apikeys:'API Keys' };
+  document.getElementById('page-title').textContent = titles[name] || name;
+
+  if (name === 'realtime') startRealtime();
+  else stopRealtime();
+
+  if (name === 'coverage')  loadCoverage();
+  if (name === 'users')     loadUsers();
+  if (name === 'analytics') loadEndpoints();
+  if (name === 'explorer')  loadStatesDropdown();
+}
+
+// ── Health check ──────────────────────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const data = await fetch('/health').then(r => r.json());
+    const ok   = data.status === 'healthy';
+    document.getElementById('health-dot').style.background   = ok ? 'var(--green)' : 'var(--red)';
+    document.getElementById('health-dot').style.boxShadow    = ok ? '0 0 6px var(--green)' : '0 0 6px var(--red)';
+    document.getElementById('health-label').textContent = ok ? 'All systems normal' : 'Degraded';
+  } catch { document.getElementById('health-label').textContent = 'Offline'; }
+}
+
+// ── Overview ──────────────────────────────────────────────────────────────
+async function loadOverview() {
+  try {
+    const { data } = await apiFetch('/admin/stats');
+
+    document.getElementById('s-users').textContent       = fmt(data.users.total);
+    document.getElementById('s-users-24h').textContent   = '+' + fmt(data.users.new_24h);
+    document.getElementById('s-req-today').textContent   = fmt(data.usage.total_today || 0);
+    document.getElementById('s-active-keys').textContent = fmt(data.keys.active);
+    document.getElementById('s-p95').textContent         = fmtMs(data.latency.p95_ms);
+    document.getElementById('s-cache').textContent       = (data.latency.cache_hit_pct || 0).toFixed(1) + '%';
+
+    // Geo stats card
+    document.getElementById('geo-stats').innerHTML = `
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">States</span><b>${fmt(data.geo.states)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Districts</span><b>${fmt(data.geo.districts)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Sub-Districts</span><b>${fmt(data.geo.sub_districts)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Villages</span><b style="color:var(--accent)">${fmt(data.geo.villages)}</b></div>
+    `;
+    document.getElementById('latency-stats').innerHTML = `
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Avg (1h)</span><span class="latency ${latClass(data.latency.avg_ms)}">${fmtMs(data.latency.avg_ms)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">P95 (1h)</span><span class="latency ${latClass(data.latency.p95_ms)}">${fmtMs(data.latency.p95_ms)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">P99 (1h)</span><span class="latency ${latClass(data.latency.p99_ms)}">${fmtMs(data.latency.p99_ms)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Cache Hit</span><b style="color:var(--green)">${(data.latency.cache_hit_pct||0).toFixed(1)}%</b></div>
+    `;
+
+    // Revenue estimation
+    const prices = { free:0, premium:29.99, pro:99.99, unlimited:299.99 };
+    const mrr    = (data.users.premium||0)*prices.premium + (data.users.pro||0)*prices.pro + (data.users.unlimited||0)*prices.unlimited;
+    document.getElementById('revenue-stats').innerHTML = `
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Free</span><b>${fmt(data.users.free||0)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Premium</span><b style="color:var(--blue)">${fmt(data.users.premium||0)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Pro</span><b style="color:var(--accent)">${fmt(data.users.pro||0)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Unlimited</span><b style="color:var(--green)">${fmt(data.users.unlimited||0)}</b></div>
+      <div style="border-top:1px solid var(--border);padding-top:8px;display:flex;justify-content:space-between"><span>Est. MRR</span><b style="color:var(--accent);font-size:16px">₹${fmt(Math.round(mrr*83))}</b></div>
+    `;
+
+    // Plan doughnut
+    const planData = [data.users.free||0, data.users.premium||0, data.users.pro||0, data.users.unlimited||0];
+    renderPlanChart(planData);
+
+  } catch(e) { console.error('Overview load error:', e); }
+}
+
+async function loadRequestChart() {
+  try {
+    const { data } = await apiFetch('/analytics/timeseries?days=30');
+    document.getElementById('chart-loading').textContent = '';
+    renderReqChart(data);
+  } catch(e) { document.getElementById('chart-loading').textContent = 'Auth required'; }
+}
+
+function renderReqChart(rows) {
+  const ctx = document.getElementById('req-chart').getContext('2d');
+  if (charts.req) charts.req.destroy();
+  charts.req = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels:   rows.map(r => new Date(r.date).toLocaleDateString('en-IN',{month:'short',day:'numeric'})),
+      datasets: [{
+        label: 'Requests',
+        data:  rows.map(r => r.requests),
+        borderColor: '#f97316',
+        backgroundColor: 'rgba(249,115,22,.12)',
+        tension: 0.4, fill: true, pointRadius: 2,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ grid:{color:'#30363d'}, ticks:{color:'#7d8590',maxTicksLimit:7} },
+        y:{ grid:{color:'#30363d'}, ticks:{color:'#7d8590'} }
+      }
+    }
+  });
+}
+
+function renderPlanChart(data) {
+  const ctx = document.getElementById('plan-chart').getContext('2d');
+  if (charts.plan) charts.plan.destroy();
+  const labels = ['Free','Premium','Pro','Unlimited'];
+  const colors = ['#7d8590','#58a6ff','#f97316','#3fb950'];
+  charts.plan = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets:[{ data, backgroundColor:colors, borderWidth:0 }] },
+    options: { responsive:true, plugins:{legend:{display:false}}, cutout:'65%' }
+  });
+  const legend = document.getElementById('plan-legend');
+  legend.innerHTML = labels.map((l,i) =>
+    `<div style="display:flex;align-items:center;gap:6px">
+      <div style="width:10px;height:10px;border-radius:3px;background:${colors[i]}"></div>
+      <span style="color:var(--muted)">${l}</span>
+      <b style="margin-left:auto">${fmt(data[i])}</b>
+    </div>`
+  ).join('');
+}
+
+// ── Users ──────────────────────────────────────────────────────────────────
+let allUsers = [];
+async function loadUsers() {
+  try {
+    const { data } = await apiFetch('/admin/users?limit=100');
+    allUsers = data;
+    renderUsers(allUsers);
+  } catch(e) { document.getElementById('users-tbody').innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--red)">${e.message}</td></tr>`; }
+}
+
+function filterUsers() {
+  const q    = document.getElementById('user-search').value.toLowerCase();
+  const plan = document.getElementById('user-plan-filter').value;
+  const filtered = allUsers.filter(u =>
+    (!q    || u.email.toLowerCase().includes(q) || (u.company_name||'').toLowerCase().includes(q)) &&
+    (!plan || u.plan === plan)
+  );
+  renderUsers(filtered);
+}
+
+function renderUsers(users) {
+  document.getElementById('user-count').textContent = `${users.length} users`;
+  document.getElementById('users-tbody').innerHTML = users.length === 0
+    ? '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">No users found</td></tr>'
+    : users.map(u => `
+      <tr>
+        <td><div style="font-weight:500">${u.email}</div><div style="font-size:11px;color:var(--muted)">${u.full_name||''}</div></td>
+        <td style="color:var(--muted)">${u.company_name||'—'}</td>
+        <td>${planBadge(u.plan)}</td>
+        <td>${u.active_keys||0}</td>
+        <td>${fmt(u.requests_today||0)}</td>
+        <td style="color:var(--muted)">${relDate(u.created_at)}</td>
+        <td><span class="badge ${u.is_active?'badge-green':'badge-red'}">${u.is_active?'Active':'Suspended'}</span></td>
+        <td>
+          <select class="input" style="padding:3px 8px;font-size:11px" onchange="updateUserPlan('${u.id}',this.value)">
+            <option value="">Plan…</option>
+            ${['free','premium','pro','unlimited'].map(p=>`<option value="${p}" ${u.plan===p?'selected':''}>${p}</option>`).join('')}
+          </select>
+        </td>
+      </tr>`).join('');
+}
+
+async function updateUserPlan(userId, plan) {
+  if (!plan) return;
+  try {
+    await apiFetch(`/admin/users/${userId}`, { method:'PATCH', body: JSON.stringify({plan}) });
+    toast(`Plan updated to ${plan}`);
+    loadUsers();
+  } catch(e) { toast('Update failed: ' + e.message, false); }
+}
+
+// ── Geo Coverage ──────────────────────────────────────────────────────────
+async function loadCoverage() {
+  try {
+    const { data } = await apiFetch('/admin/geo/coverage');
+    const maxV = Math.max(...data.map(r => r.villages));
+    document.getElementById('coverage-tbody').innerHTML = data.map(r => `
+      <tr>
+        <td><b>${r.state}</b></td>
+        <td style="color:var(--muted);font-family:monospace">${r.code}</td>
+        <td>${fmt(r.districts)}</td>
+        <td>${fmt(r.sub_districts)}</td>
+        <td><b style="color:var(--accent)">${fmt(r.villages)}</b></td>
+        <td style="min-width:120px">
+          <div class="bar-wrap"><div class="bar-fill" style="width:${(r.villages/maxV*100).toFixed(1)}%"></div></div>
+          <span style="font-size:10px;color:var(--muted)">${(r.villages/maxV*100).toFixed(0)}% of max</span>
+        </td>
+      </tr>`).join('');
+  } catch(e) { document.getElementById('coverage-tbody').innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--red);padding:32px">${e.message}</td></tr>`; }
+}
+
+// ── Data Explorer ─────────────────────────────────────────────────────────
+async function loadStatesDropdown() {
+  try {
+    const apiKey = document.getElementById('ex-apikey').value.trim();
+    if (!apiKey) return;
+    const { data } = await fetch(`${API}/states`, { headers:{'X-API-Key':apiKey} }).then(r=>r.json());
+    const sel = document.getElementById('dd-state');
+    sel.innerHTML = '<option value="">— Select State —</option>' +
+      data.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  } catch(e) {}
+}
+
+async function loadDistricts() {
+  const stateId = document.getElementById('dd-state').value;
+  const apiKey  = document.getElementById('ex-apikey').value.trim();
+  if (!stateId || !apiKey) return;
+  try {
+    const { data } = await fetch(`${API}/districts?state_id=${stateId}`, { headers:{'X-API-Key':apiKey} }).then(r=>r.json());
+    const sel = document.getElementById('dd-district');
+    sel.innerHTML = '<option value="">— Select District —</option>' +
+      data.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    document.getElementById('dd-subdist').innerHTML = '<option value="">— Select Sub-District —</option>';
+    document.getElementById('dd-villages').innerHTML = 'Select a sub-district to see its villages.';
+  } catch(e) {}
+}
+
+async function loadSubDistricts() {
+  const distId = document.getElementById('dd-district').value;
+  const apiKey = document.getElementById('ex-apikey').value.trim();
+  if (!distId || !apiKey) return;
+  try {
+    const { data } = await fetch(`${API}/sub-districts?district_id=${distId}`, { headers:{'X-API-Key':apiKey} }).then(r=>r.json());
+    const sel = document.getElementById('dd-subdist');
+    sel.innerHTML = '<option value="">— Select Sub-District —</option>' +
+      data.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    document.getElementById('dd-villages').innerHTML = 'Select a sub-district.';
+  } catch(e) {}
+}
+
+async function loadVillages() {
+  const sdId   = document.getElementById('dd-subdist').value;
+  const apiKey = document.getElementById('ex-apikey').value.trim();
+  if (!sdId || !apiKey) return;
+  try {
+    const { data, meta } = await fetch(`${API}/villages?sub_district_id=${sdId}&limit=50`, { headers:{'X-API-Key':apiKey} }).then(r=>r.json());
+    document.getElementById('dd-villages').innerHTML = `
+      <div style="color:var(--muted);margin-bottom:12px">${meta.total} villages (showing first 50)</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">
+        ${data.map(v => `
+          <div style="background:var(--surface2);padding:10px 12px;border-radius:6px;border:1px solid var(--border)">
+            <div style="font-weight:500;margin-bottom:2px">${v.name}</div>
+            <div style="font-size:11px;color:var(--muted)">${v.full_address}</div>
+            <div style="font-size:10px;font-family:monospace;color:var(--accent);margin-top:4px">${v.code}</div>
+          </div>`).join('')}
+      </div>`;
+  } catch(e) { document.getElementById('dd-villages').innerHTML = '<span style="color:var(--red)">Error: ' + e.message + '</span>'; }
+}
+
+let searchDebounce;
+function explorerSearch() {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(async () => {
+    const q      = document.getElementById('ex-query').value.trim();
+    const type   = document.getElementById('ex-type').value;
+    const apiKey = document.getElementById('ex-apikey').value.trim();
+    if (q.length < 2 || !apiKey) return;
+    try {
+      const { data, meta } = await fetch(`${API}/search?q=${encodeURIComponent(q)}&type=${type}&limit=20`, {
+        headers:{'X-API-Key':apiKey}
+      }).then(r=>r.json());
+      document.getElementById('explorer-results').innerHTML = `
+        <div style="color:var(--muted);margin-bottom:12px">Found ${meta.count} results for "<b style="color:var(--text)">${q}</b>"</div>
+        <div style="display:grid;gap:8px">
+          ${data.map(r => `
+            <div style="background:var(--surface2);padding:10px 14px;border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;gap:12px">
+              <span class="badge badge-blue" style="min-width:90px;text-align:center">${r.type}</span>
+              <div>
+                <div style="font-weight:500">${r.name}</div>
+                <div style="font-size:11px;color:var(--muted)">${r.full_address||[r.district_name,r.state_name].filter(Boolean).join(', ')}</div>
+              </div>
+              <span style="margin-left:auto;font-size:11px;color:var(--muted)">${(r.similarity*100||0).toFixed(0)}% match</span>
+            </div>`).join('')}
+        </div>`;
+    } catch(e) { document.getElementById('explorer-results').innerHTML = '<span style="color:var(--red)">Error: ' + e.message + '. Ensure API key is valid.</span>'; }
+  }, 350);
+}
+
+// ── Endpoints ─────────────────────────────────────────────────────────────
+async function loadEndpoints() {
+  try {
+    const { data } = await apiFetch('/analytics/endpoints?days=7');
+    document.getElementById('endpoints-tbody').innerHTML = data.map(e => `
+      <tr>
+        <td><code style="font-size:12px;background:var(--surface2);padding:2px 6px;border-radius:4px">${e.endpoint}</code></td>
+        <td><b>${fmt(e.requests)}</b></td>
+        <td><span class="latency ${latClass(e.avg_latency_ms)}">${fmtMs(e.avg_latency_ms)}</span></td>
+        <td><span class="latency ${latClass(e.p95_latency_ms)}">${fmtMs(e.p95_latency_ms)}</span></td>
+        <td>${(e.cache_hit_pct||0).toFixed(1)}%</td>
+        <td style="color:${e.errors>0?'var(--red)':'var(--muted)'}">${e.errors}</td>
+      </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">No data yet</td></tr>';
+  } catch(e) { document.getElementById('endpoints-tbody').innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:24px">${e.message}</td></tr>`; }
+}
+
+// ── Realtime ──────────────────────────────────────────────────────────────
+function startRealtime() {
+  loadRealtime();
+  rtInterval = setInterval(loadRealtime, 15000);
+}
+function stopRealtime() { clearInterval(rtInterval); }
+
+async function loadRealtime() {
+  try {
+    const { data } = await apiFetch('/admin/usage/realtime');
+    document.getElementById('rt-last-update').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+    const ctx = document.getElementById('rt-chart').getContext('2d');
+    if (charts.rt) charts.rt.destroy();
+    charts.rt = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels:   data.map(r => new Date(r.minute).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})),
+        datasets: [
+          { label:'Requests', data:data.map(r=>r.requests), backgroundColor:'rgba(249,115,22,.7)', borderRadius:4 },
+          { label:'Errors',   data:data.map(r=>r.errors),   backgroundColor:'rgba(248,81,73,.7)',  borderRadius:4 },
+        ]
+      },
+      options:{
+        responsive:true, plugins:{legend:{labels:{color:'#7d8590'}}},
+        scales:{ x:{grid:{color:'#30363d'},ticks:{color:'#7d8590'}}, y:{grid:{color:'#30363d'},ticks:{color:'#7d8590'}} }
+      }
+    });
+
+    const latest = data[data.length-1];
+    document.getElementById('rt-metrics').innerHTML = latest ? `
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Requests/min</span><b style="color:var(--accent)">${fmt(latest.requests)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Avg Latency</span><span class="latency ${latClass(latest.avg_ms)}">${fmtMs(latest.avg_ms)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Cache Hits</span><b style="color:var(--green)">${fmt(latest.cache_hits)}</b></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Errors</span><b style="color:${latest.errors>0?'var(--red)':'var(--green)'}">${latest.errors}</b></div>
+    ` : '<div style="color:var(--muted)">No traffic in last 5 minutes</div>';
+  } catch(e) {}
+}
+
+// ── Bootstrap ─────────────────────────────────────────────────────────────
+function refreshAll() {
+  loadOverview();
+  loadRequestChart();
+  checkHealth();
+  toast('Refreshed');
+}
+
+setInterval(() => {
+  const d = new Date();
+  document.getElementById('live-time').textContent =
+    d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}, 1000);
+
+checkHealth();
+setInterval(checkHealth, 30000);
+loadOverview();
+loadRequestChart();
+</script>
+</body>
+</html>
