@@ -1,7 +1,7 @@
 {
   "version": 2,
   "name": "india-geo-api",
-  "regions": ["bom1", "sin1"],
+  "regions": ["sin1"],
   "env": {
     "NODE_ENV": "production"
   },
