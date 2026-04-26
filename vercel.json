@@ -1,35 +1,11 @@
 {
   "version": 2,
   "name": "india-geo-api",
-  "builds": [
-    {
-      "src": "api/src/app.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/health",
-      "dest": "api/src/app.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "api/src/app.js",
-      "headers": {
-        "Cache-Control": "s-maxage=0"
-      }
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "regions": ["bom1", "sin1"],
+  "regions": ["sin1"],
   "functions": {
     "api/src/app.js": {
-      "memory":  1024,
+      "runtime": "@vercel/node",
+      "memory": 1024,
       "maxDuration": 10
     }
   },
@@ -50,9 +26,13 @@
       "source": "/api/v1/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options",         "value": "DENY" },
-        { "key": "X-Powered-By",            "value": "India Geo SaaS" }
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Powered-By", "value": "India Geo SaaS" }
       ]
     }
+  ],
+  "rewrites": [
+ 
+    { "source": "/(.*)", "destination": "api/src/app.js" }
   ]
 }
