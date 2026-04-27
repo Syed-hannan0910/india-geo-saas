@@ -3,17 +3,12 @@
   "name": "india-geo-api",
   "regions": ["sin1"],
   "functions": {
-    "api/src/app.js": {
-      "runtime": "nodejs20.x",
+    "src/app.js": {
+      "runtime": "@vercel/node",
       "memory": 1024,
       "maxDuration": 10
     }
   },
-  {
-  "engines": {
-    "node" : "20.x"
-  }
-},
   "headers": [
     {
       "source": "/api/v1/states",
@@ -37,7 +32,6 @@
     }
   ],
   "rewrites": [
- 
-    { "source": "/(.*)", "destination": "api/src/app.js" }
+    { "source": "/(.*)", "destination": "src/app.js" }
   ]
 }
