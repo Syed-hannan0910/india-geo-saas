@@ -3,8 +3,8 @@
   "name": "india-geo-api",
   "regions": ["sin1"],
   "functions": {
-    "src/app.js": {
-      "runtime": "nodejs20.0.0",
+    "api/src/app.js": {
+      "runtime": "@vercel/node",
       "memory": 1024,
       "maxDuration": 10
     }
