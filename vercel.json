@@ -9,6 +9,11 @@
       "maxDuration": 10
     }
   },
+  {
+  "engines": {
+    "node" : "20.x"
+  }
+},
   "headers": [
     {
       "source": "/api/v1/states",
