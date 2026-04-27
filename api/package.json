@@ -4,7 +4,7 @@
   "description": "Production-grade India village-level geo data REST API",
   "main": "src/app.js",
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   },
   "scripts": {
     "start": "node src/app.js",
