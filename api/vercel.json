@@ -1,36 +1,10 @@
 {
   "version": 2,
-  "name": "india-geo-api",
-  "regions": ["sin1"],
   "functions": {
-    "api/src/app.js": {
-      "runtime": "@vercel/node",
-      "memory": 1024,
-      "maxDuration": 10
+    "src/app.js": {
+      "runtime": "@vercel/node"
     }
   },
-  "headers": [
-    {
-      "source": "/api/v1/states",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, s-maxage=86400, stale-while-revalidate=3600" }
-      ]
-    },
-    {
-      "source": "/api/v1/districts",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, s-maxage=86400, stale-while-revalidate=3600" }
-      ]
-    },
-    {
-      "source": "/api/v1/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-Powered-By", "value": "India Geo SaaS" }
-      ]
-    }
-  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "src/app.js" }
   ]
