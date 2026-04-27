@@ -1,15 +1,6 @@
 {
   "version": 2,
-  "functions": {
-    "src/app.js": {
-      "runtime": "@vercel/node"
-      
-    },
-    "engines": {
-    "node": ">=20.0.0"
-  }
-  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "src/app.js" }
+    { "source": "/(.*)", "destination": "/src/app.js" }
   ]
 }
